@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Invoice - Invoice Generator</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- html2pdf.js for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Google Fonts for better typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for the file input button */
+        .file-input-button {
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            border: 1px solid #D1D5DB;
+            background-color: white;
+            font-weight: 500;
+            color: #374151;
+            transition: background-color 0.2s;
+        }
+        .file-input-button:hover {
+            background-color: #F9FAFB;
+        }
+        /* Styles for printing */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #invoice-preview, #invoice-preview * {
+                visibility: visible;
+            }
+            #invoice-preview {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 lg:p-8">
+        <header class="text-center mb-8 no-print">
+            <h1 class="text-4xl font-bold text-gray-900">Simple Invoice</h1>
+            <p class="text-lg text-gray-600 mt-2">A simple invoice generator for modern businesses.</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+            <!-- Form Section -->
+            <section class="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg no-print">
+                <h2 class="text-2xl font-bold mb-6 border-b pb-3">Invoice Details</h2>
+                
+                <!-- Business Details -->
+                <div class="space-y-4 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-700">Your Business Details</h3>
+                    <div>
+                        <label for="businessName" class="block text-sm font-medium text-gray-600">Business Name</label>
+                        <input type="text" id="businessName" placeholder="Kwari Market Ventures" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="businessAddress" class="block text-sm font-medium text-gray-600">Business Address</label>
+                        <input type="text" id="businessAddress" placeholder="Kano, Nigeria" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                     <div>
+                        <label for="businessLogoUpload" class="block text-sm font-medium text-gray-600">Upload Your Logo</label>
+                        <input type="file" id="businessLogoUpload" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    </div>
+                </div>
+
+                <!-- Customer Details -->
+                <div class="space-y-4 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-700">Customer Details</h3>
+                    <div>
+                        <label for="customerName" class="block text-sm font-medium text-gray-600">Customer's Full Name</label>
+                        <input type="text" id="customerName" placeholder="Sani Musa" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                </div>
+                
+                <!-- Invoice Details -->
+                 <div class="space-y-4 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-700">Invoice Meta</h3>
+                     <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="invoiceNumber" class="block text-sm font-medium text-gray-600">Invoice Number</label>
+                            <input type="text" id="invoiceNumber" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="invoiceDate" class="block text-sm font-medium text-gray-600">Invoice Date</label>
+                            <input type="date" id="invoiceDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                     </div>
+                </div>
+
+                <!-- Items Section -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">Items</h3>
+                    <div id="items-container" class="space-y-3">
+                        <!-- Item rows will be dynamically added here by JavaScript -->
+                    </div>
+                    <button id="addItemBtn" class="mt-4 w-full text-blue-600 font-semibold py-2 px-4 border-2 border-dashed border-blue-400 rounded-lg hover:bg-blue-50 transition-colors">
+                        + Add Item
+                    </button>
+                </div>
+
+                <!-- Notes Section -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-700">Notes</h3>
+                    <textarea id="notes" rows="3" placeholder="e.g., 'Thank you for your business!'" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="mt-8 flex flex-col sm:flex-row gap-4">
+                    <button id="downloadPdfBtn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors shadow-md">
+                        Download PDF
+                    </button>
+                    <button id="printBtn" class="w-full bg-gray-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors shadow-md">
+                        Print Invoice
+                    </button>
+                </div>
+
+            </section>
+            
+            <!-- Invoice Preview Section -->
+            <section class="lg:col-span-3">
+                 <div id="invoice-preview-wrapper" class="bg-white p-4 sm:p-8 rounded-xl shadow-lg">
+                    <div id="invoice-preview" class="w-full">
+                        <!-- ALL CONTENT INSIDE THIS DIV WILL BE PART OF THE PDF/PRINT -->
+                        <header class="flex justify-between items-start mb-10">
+                            <div>
+                                <img id="logo-preview" src="https://placehold.co/150x50/e2e8f0/e2e8f0?text=Logo" alt="Business Logo" class="h-16 mb-4 object-contain">
+                                <h2 id="businessName-preview" class="text-2xl font-bold text-gray-900">Your Business Name</h2>
+                                <p id="businessAddress-preview" class="text-gray-600">Your Business Address</p>
+                            </div>
+                            <div class="text-right">
+                                <h1 class="text-4xl font-bold uppercase text-gray-800">Invoice</h1>
+                                <p class="text-gray-600 mt-2">#<span id="invoiceNumber-preview">001</span></p>
+                                <p class="text-gray-600">Date: <span id="invoiceDate-preview">--/--/----</span></p>
+                            </div>
+                        </header>
+
+                        <div class="mb-10">
+                            <h3 class="text-sm font-semibold uppercase text-gray-500 mb-2">Bill To:</h3>
+                            <p id="customerName-preview" class="text-lg font-bold text-gray-800">Customer Name</p>
+                        </div>
+                        
+                        <table class="w-full mb-10">
+                            <thead>
+                                <tr class="bg-gray-200 text-left text-gray-700 uppercase text-sm">
+                                    <th class="py-3 px-4 font-semibold">Item Description</th>
+                                    <th class="py-3 px-4 font-semibold text-center">Qty</th>
+                                    <th class="py-3 px-4 font-semibold text-right">Price</th>
+                                    <th class="py-3 px-4 font-semibold text-right">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="items-preview-container">
+                                <!-- Sample item row will appear here -->
+                                <tr class="border-b">
+                                    <td class="py-3 px-4">No items added yet</td>
+                                    <td class="py-3 px-4 text-center">-</td>
+                                    <td class="py-3 px-4 text-right">-</td>
+                                    <td class="py-3 px-4 text-right">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <div class="flex justify-end mb-10">
+                            <div class="w-full max-w-sm">
+                                <div class="flex justify-between text-lg text-gray-700 py-2">
+                                    <span>Subtotal</span>
+                                    <span id="subtotal-preview">₦0.00</span>
+                                </div>
+                                <div class="flex justify-between text-2xl font-bold text-gray-900 py-3 border-t-2 border-gray-300">
+                                    <span>Total Amount</span>
+                                    <span id="total-preview">₦0.00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="text-md font-semibold text-gray-800 mb-2">Notes:</h4>
+                            <p id="notes-preview" class="text-gray-600 text-sm">Thank you for your business.</p>
+                        </div>
+                        <!-- END OF PDF/PRINT CONTENT -->
+                    </div>
+                 </div>
+            </section>
+        </main>
+    </div>
+
+<script>
+    // Wait for the entire page to load before running the script
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // Select all the form inputs and preview outputs we will be working with
+        const formInputs = {
+            businessName: document.getElementById('businessName'),
+            businessAddress: document.getElementById('businessAddress'),
+            businessLogoUpload: document.getElementById('businessLogoUpload'),
+            customerName: document.getElementById('customerName'),
+            invoiceNumber: document.getElementById('invoiceNumber'),
+            invoiceDate: document.getElementById('invoiceDate'),
+            notes: document.getElementById('notes'),
+        };
+
+        const previewOutputs = {
+            businessName: document.getElementById('businessName-preview'),
+            businessAddress: document.getElementById('businessAddress-preview'),
+            logo: document.getElementById('logo-preview'),
+            customerName: document.getElementById('customerName-preview'),
+            invoiceNumber: document.getElementById('invoiceNumber-preview'),
+            invoiceDate: document.getElementById('invoiceDate-preview'),
+            notes: document.getElementById('notes-preview'),
+            itemsContainer: document.getElementById('items-preview-container'),
+            subtotal: document.getElementById('subtotal-preview'),
+            total: document.getElementById('total-preview'),
+        };
+
+        const itemsContainer = document.getElementById('items-container');
+        const addItemBtn = document.getElementById('addItemBtn');
+        const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+        const printBtn = document.getElementById('printBtn');
+
+        // This function runs once when the app starts
+        function initialize() {
+            // Set default values for invoice number and date
+            formInputs.invoiceNumber.value = `INV-${Date.now().toString().slice(-6)}`;
+            formInputs.invoiceDate.valueAsDate = new Date();
+            
+            addItemRow(); // Add one item row by default
+            updateAllPreviews(); // Update the preview to reflect default values
+            attachEventListeners(); // Set up all the event listeners
+        }
+
+        // This function sets up all event listeners for the form
+        function attachEventListeners() {
+            // Update preview whenever any text input changes
+            Object.values(formInputs).forEach(input => {
+                if(input.type !== 'file') {
+                    input.addEventListener('input', updateAllPreviews);
+                }
+            });
+
+            // Handle logo file upload
+            formInputs.businessLogoUpload.addEventListener('change', handleLogoUpload);
+            
+            // Add a new item row when the "Add Item" button is clicked
+            addItemBtn.addEventListener('click', addItemRow);
+            
+            // Generate PDF when the "Download PDF" button is clicked
+            downloadPdfBtn.addEventListener('click', generatePdf);
+            
+            // Open the print dialog when the "Print" button is clicked
+            printBtn.addEventListener('click', () => window.print());
+        }
+
+        // Function to add a new item row to the form
+        function addItemRow() {
+            const itemDiv = document.createElement('div');
+            itemDiv.classList.add('grid', 'grid-cols-12', 'gap-2', 'items-center', 'item-row');
+            itemDiv.innerHTML = `
+                <input type="text" placeholder="Item Name" class="col-span-4 rounded-md border-gray-300 shadow-sm text-sm p-2 item-name">
+                <input type="number" value="1" min="1" placeholder="Qty" class="col-span-2 rounded-md border-gray-300 shadow-sm text-sm p-2 text-center item-qty">
+                <input type="number" placeholder="Price" class="col-span-3 rounded-md border-gray-300 shadow-sm text-sm p-2 text-right item-price">
+                <span class="col-span-2 text-sm text-right font-semibold item-total">₦0.00</span>
+                <button class="col-span-1 text-red-500 hover:text-red-700 font-bold remove-item-btn">X</button>
+            `;
+            itemsContainer.appendChild(itemDiv);
+            
+            // Add event listeners to the new inputs for real-time calculation
+            itemDiv.querySelectorAll('input').forEach(input => {
+                 input.addEventListener('input', () => {
+                     updateItemTotal(itemDiv);
+                     updateAllPreviews();
+                 });
+            });
+
+            // Add event listener to the remove button
+            itemDiv.querySelector('.remove-item-btn').addEventListener('click', () => {
+                itemDiv.remove();
+                updateAllPreviews();
+            });
+        }
+        
+        // Function to handle the logo image upload
+        function handleLogoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewOutputs.logo.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Function to calculate and update the total for a single item row
+        function updateItemTotal(row) {
+            const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+            const price = parseFloat(row.querySelector('.item-price').value) || 0;
+            const total = qty * price;
+            row.querySelector('.item-total').textContent = formatCurrency(total);
+        }
+
+        // Function to update all parts of the live preview
+        function updateAllPreviews() {
+            previewOutputs.businessName.textContent = formInputs.businessName.value || 'Your Business Name';
+            previewOutputs.businessAddress.textContent = formInputs.businessAddress.value || 'Your Business Address';
+            previewOutputs.customerName.textContent = formInputs.customerName.value || 'Customer Name';
+            previewOutputs.invoiceNumber.textContent = formInputs.invoiceNumber.value || '000';
+            
+            // Format and update the date
+            const date = new Date(formInputs.invoiceDate.value);
+            previewOutputs.invoiceDate.textContent = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            
+            previewOutputs.notes.textContent = formInputs.notes.value || 'Thank you for your business.';
+
+            // Update the items table and financial totals in the preview
+            updateItemsPreviewAndTotals();
+        }
+        
+        // Function to update the items table and calculate totals
+        function updateItemsPreviewAndTotals() {
+            previewOutputs.itemsContainer.innerHTML = '';
+            let subtotal = 0;
+            const itemRows = document.querySelectorAll('.item-row');
+            
+            if (itemRows.length === 0) {
+                 previewOutputs.itemsContainer.innerHTML = `
+                    <tr class="border-b">
+                        <td class="py-3 px-4">No items added yet</td>
+                        <td class="py-3 px-4 text-center">-</td>
+                        <td class="py-3 px-4 text-right">-</td>
+                        <td class="py-3 px-4 text-right">-</td>
+                    </tr>`;
+            } else {
+                 itemRows.forEach(row => {
+                    const name = row.querySelector('.item-name').value || 'Unnamed Item';
+                    const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+                    const price = parseFloat(row.querySelector('.item-price').value) || 0;
+                    const total = qty * price;
+                    subtotal += total;
+                    
+                    const previewRow = document.createElement('tr');
+                    previewRow.classList.add('border-b');
+                    previewRow.innerHTML = `
+                        <td class="py-3 px-4">${name}</td>
+                        <td class="py-3 px-4 text-center">${qty}</td>
+                        <td class="py-3 px-4 text-right">${formatCurrency(price)}</td>
+                        <td class="py-3 px-4 text-right font-medium">${formatCurrency(total)}</td>
+                    `;
+                    previewOutputs.itemsContainer.appendChild(previewRow);
+                });
+            }
+
+            // Update the subtotal and total in the preview
+            previewOutputs.subtotal.textContent = formatCurrency(subtotal);
+            previewOutputs.total.textContent = formatCurrency(subtotal); // For now, total is same as subtotal
+        }
+        
+        // Function to generate and download the PDF
+        function generatePdf() {
+            const invoiceElement = document.getElementById('invoice-preview');
+            const opt = {
+              margin:       0.5,
+              filename:     `invoice-${formInputs.invoiceNumber.value || '000'}.pdf`,
+              image:        { type: 'jpeg', quality: 0.98 },
+              html2canvas:  { scale: 2, useCORS: true },
+              jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(invoiceElement).save();
+        }
+
+        // Function to format a number as Nigerian Naira
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(amount);
+        }
+
+        // Start the application
+        initialize();
+    });
+</script>
+
+</body>
+</html>
+
